@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1773048061557,
+    "savedAt": "2026-03-09T09:21:01.557Z",
+    "an": "Swisscom",
+    "bn": "Mobile Factory",
+    "a": {
+      "dl": 686.91,
+      "ul": 150.62,
+      "dd": 769.3,
+      "du": 128.1,
+      "pi": 9,
+      "ji": 1,
+      "pd": 270,
+      "jd": 71,
+      "pu": 45,
+      "ju": 7,
+      "pl": 0
+    },
+    "b": {
+      "dl": 379.48,
+      "ul": 143.62,
+      "dd": 341.8,
+      "du": 110.9,
+      "pi": 18,
+      "ji": 2,
+      "pd": 128,
+      "jd": 54,
+      "pu": 59,
+      "ju": 10,
+      "pl": 0
+    },
+    "aDate": "09.03.2026 10:03",
+    "aId": "6991650427",
+    "aCarrier": "Swisscom 5G",
+    "aDevice": "iPhone 17 Pro Max",
+    "aOs": "e.g. iOS 18.3",
+    "aApp": "e.g. Speedtest by Ookla",
+    "aLocation": "Zurich",
+    "aLat": 47.496,
+    "aLon": 8.755,
+    "bDate": "09.03.2026 10:04",
+    "bId": "6991650940",
+    "bCarrier": "Swisscom (MF)",
+    "bDevice": "iPhone 17 Pro Max",
+    "bOs": "e.g. Android 15",
+    "bApp": "e.g. Speedtest by Ookla",
+    "bLocation": "Zurich",
+    "bLat": 47.496,
+    "bLon": 8.756
+  }
+]

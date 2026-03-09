@@ -1,0 +1,13 @@
+services:
+  speedtest:
+    build: .
+    container_name: speedtest-comparison
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - APP_PASSWORD=${APP_PASSWORD}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./server.js:/app/server.js
+      - ./public:/app/public
