@@ -199,10 +199,24 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Inter',sa
 
 /* ── MTR Page ── */
 .mtr-form-card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:20px;margin-bottom:20px}
-.mtr-stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.mtr-stat{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:14px 18px;flex:1;min-width:130px}
-.mtr-stat .sv{font-size:1.4rem;font-weight:800;line-height:1}
-.mtr-stat .sl{font-size:.72rem;color:var(--muted);margin-top:3px}
+.mtr-help-card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:18px 20px;margin-bottom:20px}
+.mtr-help-card h3{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px}
+.mtr-cmd-block{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px}
+.mtr-cmd-label{font-size:.68rem;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.mtr-cmd{font-family:monospace;font-size:.82rem;color:var(--accent);word-break:break-all}
+.mtr-cmd-note{font-size:.73rem;color:var(--muted);margin-top:6px}
+.mtr-ip-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+.mtr-ip-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;font-family:monospace}
+.mtr-ip-badge{font-family:monospace;font-size:.75rem;background:rgba(56,189,248,.12);color:#38bdf8;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.mtr-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.mtr-prov-card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:16px 18px}
+.mtr-prov-name{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.mtr-prov-row{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:5px}
+.mtr-prov-row .lbl{color:var(--muted)}
+.mtr-prov-row .val{font-weight:600}
+.mtr-total-card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:14px 18px;display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.mtr-total-card .big{font-size:2rem;font-weight:800;line-height:1}
+.mtr-total-card .lbl{font-size:.75rem;color:var(--muted)}
 .mtr-run{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:16px;margin-bottom:14px}
 .mtr-run-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .mtr-target{font-family:monospace;font-size:.78rem;background:var(--bg3);padding:2px 8px;border-radius:6px;color:var(--accent)}
@@ -418,7 +432,7 @@ function initMap(d) {
       <div class="fc col-2">
         <div class="fc-hdr"><span class="col-badge">Test B</span></div>
         <div class="fsec">General</div>
-        <div class="frow s1"><div class="field"><label>Label / Name</label><input id="b_name" type="text" placeholder="e.g. Mobile Factory 5G"></div></div>
+        <div class="frow s1"><div class="field"><label>Label / Name</label><input id="b_name" type="text" placeholder="e.g. Mobile Freedom 5G"></div></div>
         <div class="frow">
           <div class="field"><label>Date & Time</label><input id="b_date" type="text" placeholder="05.03.2026 14:07"></div>
           <div class="field"><label>Test ID</label><input id="b_id" type="text" placeholder="6986838735"></div>
@@ -914,21 +928,46 @@ async function runAutoFill(n, pw) {
 
 <!-- MTR PAGE -->
 <div class="page" id="page-mtr"><div style="max-width:1100px;margin:0 auto;padding:24px 16px">
+
 <div class="mtr-form-card"><div class="fc-hdr">Add MTR Run</div>
 <div class="frow" style="margin-top:10px">
 <div class="field"><label>Provider</label><select id="mtr_provider" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%"><option value="Swisscom">Swisscom</option><option value="Mobile Factory">Mobile Factory (MF)</option><option value="MUCHO">MUCHO</option><option value="NX">NX</option><option value="Other">Other</option></select></div>
 <div class="field"><label>Target (IP / hostname)</label><input type="text" id="mtr_target" placeholder="e.g. 1.1.1.1 or google.com" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%"></div>
 </div>
+<div class="mtr-ip-row">
+  <label style="font-size:.82rem;color:var(--muted);white-space:nowrap">&#x1F310; External IP</label>
+  <input type="text" id="mtr_extip" placeholder="Auto-detect or paste..." style="font-family:monospace">
+  <button class="btn btn-secondary" style="white-space:nowrap;padding:7px 14px;font-size:.82rem" onclick="mtrDetectIP()">&#x1F50D; Detect</button>
+  <span id="mtr_ip_status" style="font-size:.72rem;color:var(--muted)"></span>
+</div>
 <div class="field" style="margin-top:10px"><label>Note (optional)</label><input type="text" id="mtr_note" placeholder="e.g. peak hours, iPhone hotspot..." style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%"></div>
-<div class="field" style="margin-top:10px"><label>Paste MTR --report output</label><textarea id="mtr_input" placeholder="Paste full mtr --report output here..." style="width:100%;height:150px;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:.78rem;font-family:monospace;resize:vertical;margin-top:4px"></textarea></div>
+<div class="field" style="margin-top:10px"><label>Paste MTR --report-wide output</label><textarea id="mtr_input" placeholder="Paste full mtr --report-wide output here..." style="width:100%;height:150px;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:.78rem;font-family:monospace;resize:vertical;margin-top:4px"></textarea></div>
 <div style="display:flex;gap:8px;margin-top:12px">
 <button class="btn btn-primary" onclick="mtrSave()">&#x1F4BE; Save Run</button>
 <button class="btn btn-secondary" onclick="mtrExport()">&#x1F4E4; Export JSON</button>
 </div></div>
-<div class="mtr-stats-row" id="mtrStats"></div>
-<div id="mtrCompareBanner" style="display:none;background:var(--bg2);border:1px solid var(--accent);border-radius:13px;padding:16px;margin-bottom:20px">
-<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px">&#x26A1; Latest Swisscom vs MF</div>
-<div id="mtrCompareContent" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.82rem"></div></div>
+
+<div class="mtr-help-card">
+<h3>&#x1F4CB; How to run MTR from your Mac</h3>
+<div class="mtr-cmd-block">
+  <div class="mtr-cmd-label">&#x1F50D; Check your public IP on a specific interface first</div>
+  <div class="mtr-cmd">curl --interface en0 https://ipinfo.io/ip</div>
+  <div class="mtr-cmd-note">Confirms which SIM / carrier is active on that interface before running MTR</div>
+</div>
+<div class="mtr-cmd-block">
+  <div class="mtr-cmd-label">&#x1F4E1; Run MTR test</div>
+  <div class="mtr-cmd">sudo mtr -I en0 --report-wide -c 60 --show-ips 1.1.1.1</div>
+  <div class="mtr-cmd-note">Replace <code style="color:var(--accent)">en0</code> with your active interface &middot; <code style="color:var(--accent)">-c 60</code> sends 60 packets &middot; <code style="color:var(--accent)">--report-wide</code> shows full hostnames</div>
+</div>
+<div class="mtr-cmd-block">
+  <div class="mtr-cmd-label">&#x1F4F1; Find interface when on iPhone hotspot</div>
+  <div class="mtr-cmd">ifconfig | grep -E "^en|inet " | grep -B1 "172\.20\."</div>
+  <div class="mtr-cmd-note">iPhone hotspot uses <code style="color:var(--accent)">172.20.10.x</code> subnet &mdash; this shows which <code style="color:var(--accent)">enX</code> is active</div>
+</div>
+</div>
+
+<div id="mtrSummary"></div>
+
 <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
 <span style="font-size:.8rem;color:var(--muted)">Filter:</span>
 <select id="mtrFilter" onchange="mtrRenderRuns()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:.82rem">
@@ -942,63 +981,136 @@ window._mtrRuns=[];
 function mtrLossClass(v){return v===0?'mloss-ok':v<20?'mloss-warn':'mloss-bad';}
 function mtrLatClass(v){return v<10?'mlat-ok':v<50?'mlat-warn':'mlat-bad';}
 function mtrBadge(p){if(p==='Swisscom')return 'mtr-badge-sc';if(p==='Mobile Factory')return 'mtr-badge-mf';if(p==='MUCHO')return 'mtr-badge-mu';if(p==='NX')return 'mtr-badge-nx';return 'mtr-badge-ot';}
+function mtrProvColor(p){if(p==='Swisscom')return '#5bc0eb';if(p==='Mobile Factory')return '#c084fc';if(p==='MUCHO')return '#ffa032';if(p==='NX')return '#38bdf8';return 'var(--green)';}
+
+async function mtrDetectIP(){
+  const btn=document.querySelector('[onclick="mtrDetectIP()"]');
+  const status=document.getElementById('mtr_ip_status');
+  btn.disabled=true;status.textContent='Detecting...';
+  try{
+    const ip=await fetch('https://ipinfo.io/ip',{cache:'no-store'}).then(r=>r.text());
+    document.getElementById('mtr_extip').value=ip.trim();
+    status.textContent='✓ Detected';status.style.color='var(--green)';
+  }catch(e){status.textContent='Failed — paste manually';status.style.color='var(--red)';}
+  finally{btn.disabled=false;}
+}
+
 function parseMTR(raw){
-const lines=raw.trim().split('\n');const hops=[];let startTime=null,sourceHost=null;
-for(const line of lines){
-const ts=line.match(/Start:\s*(.+)/);if(ts)startTime=ts[1].trim();
-const sh=line.match(/HOST:\s*(\S+)/);if(sh)sourceHost=sh[1];
-const h=line.match(/^\s*(\d+)\.\|--\s+(\S+(?:\s+\([^)]+\))?)\s+([\d.]+)%\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
-if(h)hops.push({hop:+h[1],host:h[2].trim(),loss:+h[3],snt:+h[4],last:+h[5],avg:+h[6],best:+h[7],wrst:+h[8],stdev:+h[9]});}
-const lastHop=hops.at(-1);
-const detectedTarget=lastHop?lastHop.host:null;
-return{startTime,sourceHost,detectedTarget,hops};}
+  const lines=raw.trim().split('\n');const hops=[];let startTime=null,sourceHost=null;
+  for(const line of lines){
+    const ts=line.match(/Start:\s*(.+)/);if(ts)startTime=ts[1].trim();
+    const sh=line.match(/HOST:\s*(\S+)/);if(sh)sourceHost=sh[1];
+    const h=line.match(/^\s*(\d+)\.\|--\s+(.+?)\s+([\d.]+)%\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+    if(h)hops.push({hop:+h[1],host:h[2].trim(),loss:+h[3],snt:+h[4],last:+h[5],avg:+h[6],best:+h[7],wrst:+h[8],stdev:+h[9]});
+  }
+  const lastHop=hops.at(-1);
+  return{startTime,sourceHost,detectedTarget:lastHop?lastHop.host:null,hops};
+}
+
 async function loadMTR(){
-try{
-window._mtrRuns=await fetch('/api/mtr').then(r=>r.json());
-mtrRenderStats(window._mtrRuns);mtrRenderCompare(window._mtrRuns);mtrRenderRuns();
-}catch(e){document.getElementById('mtrRunsList').innerHTML='<div class="hist-empty"><div class="ei">&#x274C;</div>Could not load MTR data.</div>';}}
+  try{
+    window._mtrRuns=await fetch('/api/mtr').then(r=>r.json());
+    mtrRenderSummary(window._mtrRuns);
+    mtrRenderRuns();
+  }catch(e){document.getElementById('mtrRunsList').innerHTML='<div class="hist-empty"><div class="ei">&#x274C;</div>Could not load MTR data.</div>';}
+}
+
 async function mtrSave(){
-const raw=document.getElementById('mtr_input').value.trim();
-if(!raw){showToast('Paste MTR output first');return;}
-const parsed=parseMTR(raw);
-if(!parsed.hops.length){showToast('Could not parse MTR output');return;}
-const manualTarget=document.getElementById('mtr_target').value.trim();
-const target=manualTarget||parsed.detectedTarget||'unknown';
-try{
-await fetch('/api/mtr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:document.getElementById('mtr_provider').value,note:document.getElementById('mtr_note').value.trim(),target,raw,parsed})});
-document.getElementById('mtr_input').value='';document.getElementById('mtr_note').value='';document.getElementById('mtr_target').value='';
-showToast('MTR run saved!');loadMTR();
-}catch(e){showToast('Could not save');}}
+  const raw=document.getElementById('mtr_input').value.trim();
+  if(!raw){showToast('Paste MTR output first');return;}
+  const parsed=parseMTR(raw);
+  if(!parsed.hops.length){showToast('Could not parse MTR output');return;}
+  const manualTarget=document.getElementById('mtr_target').value.trim();
+  const target=manualTarget||parsed.detectedTarget||'unknown';
+  const extip=document.getElementById('mtr_extip').value.trim();
+  try{
+    await fetch('/api/mtr',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({provider:document.getElementById('mtr_provider').value,note:document.getElementById('mtr_note').value.trim(),target,extip,raw,parsed})});
+    document.getElementById('mtr_input').value='';
+    document.getElementById('mtr_note').value='';
+    document.getElementById('mtr_target').value='';
+    document.getElementById('mtr_extip').value='';
+    document.getElementById('mtr_ip_status').textContent='';
+    showToast('MTR run saved!');loadMTR();
+  }catch(e){showToast('Could not save');}
+}
+
 async function mtrDelete(id){
-if(!confirm('Delete this run?'))return;
-await fetch('/api/mtr/'+id,{method:'DELETE'});showToast('Deleted');loadMTR();}
+  if(!confirm('Delete this run?'))return;
+  await fetch('/api/mtr/'+id,{method:'DELETE'});showToast('Deleted');loadMTR();
+}
+
 function mtrExport(){
-const a=document.createElement('a');
-a.href=URL.createObjectURL(new Blob([JSON.stringify(window._mtrRuns,null,2)],{type:'application/json'}));
-a.download='mtr_results_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
-function mtrRenderStats(runs){
-const sc=runs.filter(r=>r.provider==='Swisscom');const mf=runs.filter(r=>r.provider==='Mobile Factory');
-const avgLat=arr=>{if(!arr.length)return '&mdash;';const v=arr.map(r=>r.parsed.hops.at(-1)?.avg||0);return(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)+' ms';};
-const avgLoss=arr=>{if(!arr.length)return '&mdash;';const v=arr.map(r=>Math.max(...r.parsed.hops.map(h=>h.loss)));return(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)+'%';};
-document.getElementById('mtrStats').innerHTML='<div class="mtr-stat"><div class="sv">'+runs.length+'</div><div class="sl">Total Runs</div></div>'+'<div class="mtr-stat"><div class="sv" style="color:#5bc0eb">'+sc.length+'</div><div class="sl">Swisscom Runs</div></div>'+'<div class="mtr-stat"><div class="sv" style="color:#c084fc">'+mf.length+'</div><div class="sl">MF Runs</div></div>'+'<div class="mtr-stat"><div class="sv">'+avgLat(sc)+'</div><div class="sl">Avg SC End Latency</div></div>'+'<div class="mtr-stat"><div class="sv">'+avgLat(mf)+'</div><div class="sl">Avg MF End Latency</div></div>'+'<div class="mtr-stat"><div class="sv">'+avgLoss(runs)+'</div><div class="sl">Avg Max Loss</div></div>';}
-function mtrRenderCompare(runs){
-const banner=document.getElementById('mtrCompareBanner');
-const sc=runs.find(r=>r.provider==='Swisscom');const mf=runs.find(r=>r.provider==='Mobile Factory');
-if(!sc||!mf){banner.style.display='none';return;}banner.style.display='block';
-const scE=sc.parsed.hops.at(-1),mfE=mf.parsed.hops.at(-1);
-const scL=Math.max(...sc.parsed.hops.map(h=>h.loss));const mfL=Math.max(...mf.parsed.hops.map(h=>h.loss));
-document.getElementById('mtrCompareContent').innerHTML='<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Hops</div><span style="color:#5bc0eb;font-weight:700">'+sc.parsed.hops.length+'</span> vs <span style="color:#c084fc;font-weight:700">'+mf.parsed.hops.length+'</span></div>'+'<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Final Avg Latency</div><span style="color:#5bc0eb;font-weight:700">'+(scE?scE.avg:'?')+' ms</span> vs <span style="color:#c084fc;font-weight:700">'+(mfE?mfE.avg:'?')+' ms</span></div>'+'<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Max Packet Loss</div><span style="color:#5bc0eb;font-weight:700">'+scL+'%</span> vs <span style="color:#c084fc;font-weight:700">'+mfL+'%</span></div>'+'<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Timestamps</div><span style="color:#5bc0eb;font-size:.75rem">'+(sc.parsed.startTime||sc.savedAt.slice(0,16).replace('T',' '))+'</span><br><span style="color:#c084fc;font-size:.75rem">'+(mf.parsed.startTime||mf.savedAt.slice(0,16).replace('T',' '))+'</span></div>';}
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(window._mtrRuns,null,2)],{type:'application/json'}));
+  a.download='mtr_results_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+
+function mtrRenderSummary(runs){
+  const el=document.getElementById('mtrSummary');
+  if(!runs.length){el.innerHTML='';return;}
+
+  /* total card */
+  let html='<div class="mtr-total-card"><div class="big">'+runs.length+'</div><div class="lbl">Total MTR runs</div></div>';
+
+  /* per-provider cards — only providers that actually have runs */
+  const providers=[...new Set(runs.map(r=>r.provider))];
+  html+='<div class="mtr-summary-grid">';
+  for(const p of providers){
+    const pr=runs.filter(r=>r.provider===p);
+    const color=mtrProvColor(p);
+    const avgLat=(()=>{
+      const v=pr.map(r=>r.parsed.hops.at(-1)?.avg||0);
+      return(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)+' ms';
+    })();
+    const avgLoss=(()=>{
+      const v=pr.map(r=>Math.max(...r.parsed.hops.map(h=>h.loss)));
+      return(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)+'%';
+    })();
+    const maxLoss=(()=>{
+      const v=pr.map(r=>Math.max(...r.parsed.hops.map(h=>h.loss)));
+      return Math.max(...v).toFixed(1)+'%';
+    })();
+    const lastRun=pr[0];
+    const lastTs=lastRun.parsed.startTime||lastRun.savedAt.slice(0,16).replace('T',' ');
+    html+=
+      '<div class="mtr-prov-card" style="border-color:'+color+'33">'+
+      '<div class="mtr-prov-name" style="color:'+color+'">'+p+' <span style="color:var(--muted);font-weight:400">('+pr.length+' run'+(pr.length>1?'s':'')+')</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">Avg end latency</span><span class="val">'+avgLat+'</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">Avg max loss</span><span class="val '+(parseFloat(avgLoss)===0?'mloss-ok':parseFloat(avgLoss)<20?'mloss-warn':'mloss-bad')+'">'+avgLoss+'</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">Peak loss</span><span class="val '+(parseFloat(maxLoss)===0?'mloss-ok':parseFloat(maxLoss)<20?'mloss-warn':'mloss-bad')+'">'+maxLoss+'</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">Last run</span><span class="val" style="font-size:.72rem;color:var(--muted)">'+lastTs+'</span></div>'+
+      '</div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
 function mtrRenderRuns(){
-const filter=document.getElementById('mtrFilter').value;
-const runs=window._mtrRuns.filter(r=>!filter||r.provider===filter);
-const el=document.getElementById('mtrRunsList');
-if(!runs.length){el.innerHTML='<div class="hist-empty"><div class="ei">&#x1F4ED;</div>No MTR runs saved yet.<br><br>Paste an <strong>mtr --report</strong> output above and click Save.</div>';return;}
-el.innerHTML=runs.map(r=>{
-const ts=r.parsed.startTime||r.savedAt.slice(0,16).replace('T',' ');
-const target=r.target||r.parsed.detectedTarget||'';
-const rows=r.parsed.hops.map(h=>'<tr><td>'+h.hop+'</td><td style="font-family:monospace;font-size:.75rem">'+h.host+'</td><td class="'+mtrLossClass(h.loss)+'">'+h.loss+'%</td><td class="'+mtrLatClass(h.avg)+'">'+h.avg+'</td><td>'+h.best+'</td><td>'+h.wrst+'</td><td>'+h.stdev+'</td></tr>').join('');
-return '<div class="mtr-run"><div class="mtr-run-hdr"><span class="mtr-badge '+mtrBadge(r.provider)+'">'+r.provider+'</span>'+(target?'<span class="mtr-target">&#x27A1; '+target+'</span>':'')+'<span style="color:var(--muted);font-size:.78rem">&#x1F550; '+ts+'</span>'+(r.note?'<span style="font-size:.8rem;color:var(--muted);font-style:italic">"'+r.note+'"</span>':'')+'<button class="mtr-del" onclick="mtrDelete('+r.id+')">&#x2715; Delete</button></div><table class="mtr-table"><thead><tr><th>Hop</th><th>Host</th><th>Loss%</th><th>Avg ms</th><th>Best</th><th>Wrst</th><th>StDev</th></tr></thead><tbody>'+rows+'</tbody></table></div>';}).join('');}
+  const filter=document.getElementById('mtrFilter').value;
+  const runs=window._mtrRuns.filter(r=>!filter||r.provider===filter);
+  const el=document.getElementById('mtrRunsList');
+  if(!runs.length){el.innerHTML='<div class="hist-empty"><div class="ei">&#x1F4ED;</div>No MTR runs saved yet.<br><br>Paste an <strong>mtr --report-wide</strong> output above and click Save.</div>';return;}
+  el.innerHTML=runs.map(r=>{
+    const ts=r.parsed.startTime||r.savedAt.slice(0,16).replace('T',' ');
+    const target=r.target||r.parsed.detectedTarget||'';
+    const rows=r.parsed.hops.map(h=>
+      '<tr><td>'+h.hop+'</td>'+
+      '<td style="font-family:monospace;font-size:.75rem">'+h.host+'</td>'+
+      '<td class="'+mtrLossClass(h.loss)+'">'+h.loss+'%</td>'+
+      '<td class="'+mtrLatClass(h.avg)+'">'+h.avg+'</td>'+
+      '<td>'+h.best+'</td><td>'+h.wrst+'</td><td>'+h.stdev+'</td></tr>'
+    ).join('');
+    return '<div class="mtr-run"><div class="mtr-run-hdr">'+
+      '<span class="mtr-badge '+mtrBadge(r.provider)+'">'+r.provider+'</span>'+
+      (target?'<span class="mtr-target">&#x27A1; '+target+'</span>':'')+
+      (r.extip?'<span class="mtr-ip-badge">&#x1F310; '+r.extip+'</span>':'')+
+      '<span style="color:var(--muted);font-size:.78rem">&#x1F550; '+ts+'</span>'+
+      (r.note?'<span style="font-size:.8rem;color:var(--muted);font-style:italic">"'+r.note+'"</span>':'')+
+      '<button class="mtr-del" onclick="mtrDelete('+r.id+')">&#x2715; Delete</button>'+
+      '</div><table class="mtr-table"><thead><tr><th>Hop</th><th>Host</th><th>Loss%</th><th>Avg ms</th><th>Best</th><th>Wrst</th><th>StDev</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }).join('');
+}
 </script>
 </html>
-
 
