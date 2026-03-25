@@ -196,6 +196,29 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Inter',sa
 .pw-remember{display:flex;align-items:center;gap:7px;font-size:.78rem;color:var(--muted);margin-bottom:16px;cursor:pointer;}
 .pw-remember input{cursor:pointer;accent-color:var(--accent);}
 
+
+/* ── MTR Page ── */
+.mtr-form-card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:20px;margin-bottom:20px}
+.mtr-stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.mtr-stat{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:14px 18px;flex:1;min-width:130px}
+.mtr-stat .sv{font-size:1.4rem;font-weight:800;line-height:1}
+.mtr-stat .sl{font-size:.72rem;color:var(--muted);margin-top:3px}
+.mtr-run{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:16px;margin-bottom:14px}
+.mtr-run-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.mtr-target{font-family:monospace;font-size:.78rem;background:var(--bg3);padding:2px 8px;border-radius:6px;color:var(--accent)}
+.mtr-badge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.mtr-badge-sc{background:rgba(91,192,235,.15);color:#5bc0eb}
+.mtr-badge-mf{background:rgba(192,132,252,.15);color:#c084fc}
+.mtr-badge-mu{background:rgba(255,160,50,.15);color:#ffa032}
+.mtr-badge-nx{background:rgba(56,189,248,.15);color:#38bdf8}
+.mtr-badge-ot{background:rgba(63,185,80,.15);color:var(--green)}
+.mtr-del{margin-left:auto;padding:3px 9px;font-size:.72rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--red);cursor:pointer}
+.mtr-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.mtr-table th{text-align:left;padding:6px 10px;color:var(--muted);border-bottom:1px solid var(--border);font-size:.68rem;text-transform:uppercase}
+.mtr-table td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
+.mtr-table tr:last-child td{border-bottom:none}
+.mloss-ok{color:var(--green)}.mloss-warn{color:#ffc940}.mloss-bad{color:var(--red);font-weight:700}
+.mlat-ok{color:var(--text)}.mlat-warn{color:#ffc940}.mlat-bad{color:var(--red)}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
@@ -301,6 +324,7 @@ function initMap(d) {
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="showPage('new')">New Comparison</div>
     <div class="nav-tab" onclick="showPage('history')">📊 History</div>
+    <div class="nav-tab" onclick="showPage('mtr')">🌐 MTR Results</div>
   </div>
   <a class="docs-link" href="https://wiki.nexphone.ch/display/NETVOIP/Speedtest+comparison" target="_blank" rel="noopener">📖 Docs</a>
 </div>
@@ -488,6 +512,7 @@ function showPage(p) {
   document.getElementById('page-' + p).classList.add('visible');
   event.currentTarget.classList.add('active');
   if (p === 'history') loadHistory();
+  if (p === 'mtr') loadMTR();
 }
 
 /* ── Wizard ── */
@@ -886,6 +911,94 @@ async function runAutoFill(n, pw) {
     </div>
   </div>
 </div>
+
+<!-- MTR PAGE -->
+<div class="page" id="page-mtr"><div style="max-width:1100px;margin:0 auto;padding:24px 16px">
+<div class="mtr-form-card"><div class="fc-hdr">Add MTR Run</div>
+<div class="frow" style="margin-top:10px">
+<div class="field"><label>Provider</label><select id="mtr_provider" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%"><option value="Swisscom">Swisscom</option><option value="Mobile Factory">Mobile Factory (MF)</option><option value="MUCHO">MUCHO</option><option value="NX">NX</option><option value="Other">Other</option></select></div>
+<div class="field"><label>Target (IP / hostname)</label><input type="text" id="mtr_target" placeholder="e.g. 1.1.1.1 or google.com" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%"></div>
+</div>
+<div class="field" style="margin-top:10px"><label>Note (optional)</label><input type="text" id="mtr_note" placeholder="e.g. peak hours, iPhone hotspot..." style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%"></div>
+<div class="field" style="margin-top:10px"><label>Paste MTR --report output</label><textarea id="mtr_input" placeholder="Paste full mtr --report output here..." style="width:100%;height:150px;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:.78rem;font-family:monospace;resize:vertical;margin-top:4px"></textarea></div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="btn btn-primary" onclick="mtrSave()">&#x1F4BE; Save Run</button>
+<button class="btn btn-secondary" onclick="mtrExport()">&#x1F4E4; Export JSON</button>
+</div></div>
+<div class="mtr-stats-row" id="mtrStats"></div>
+<div id="mtrCompareBanner" style="display:none;background:var(--bg2);border:1px solid var(--accent);border-radius:13px;padding:16px;margin-bottom:20px">
+<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:10px">&#x26A1; Latest Swisscom vs MF</div>
+<div id="mtrCompareContent" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.82rem"></div></div>
+<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+<span style="font-size:.8rem;color:var(--muted)">Filter:</span>
+<select id="mtrFilter" onchange="mtrRenderRuns()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:.82rem">
+<option value="">All Providers</option><option value="Swisscom">Swisscom</option><option value="Mobile Factory">Mobile Factory (MF)</option><option value="MUCHO">MUCHO</option><option value="NX">NX</option>
+</select></div>
+<div id="mtrRunsList"></div>
+</div></div>
 </body>
+<script>
+window._mtrRuns=[];
+function mtrLossClass(v){return v===0?'mloss-ok':v<20?'mloss-warn':'mloss-bad';}
+function mtrLatClass(v){return v<10?'mlat-ok':v<50?'mlat-warn':'mlat-bad';}
+function mtrBadge(p){if(p==='Swisscom')return 'mtr-badge-sc';if(p==='Mobile Factory')return 'mtr-badge-mf';if(p==='MUCHO')return 'mtr-badge-mu';if(p==='NX')return 'mtr-badge-nx';return 'mtr-badge-ot';}
+function parseMTR(raw){
+const lines=raw.trim().split('\n');const hops=[];let startTime=null,sourceHost=null;
+for(const line of lines){
+const ts=line.match(/Start:\s*(.+)/);if(ts)startTime=ts[1].trim();
+const sh=line.match(/HOST:\s*(\S+)/);if(sh)sourceHost=sh[1];
+const h=line.match(/^\s*(\d+)\.\|--\s+(\S+(?:\s+\([^)]+\))?)\s+([\d.]+)%\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+if(h)hops.push({hop:+h[1],host:h[2].trim(),loss:+h[3],snt:+h[4],last:+h[5],avg:+h[6],best:+h[7],wrst:+h[8],stdev:+h[9]});}
+const lastHop=hops.at(-1);
+const detectedTarget=lastHop?lastHop.host:null;
+return{startTime,sourceHost,detectedTarget,hops};}
+async function loadMTR(){
+try{
+window._mtrRuns=await fetch('/api/mtr').then(r=>r.json());
+mtrRenderStats(window._mtrRuns);mtrRenderCompare(window._mtrRuns);mtrRenderRuns();
+}catch(e){document.getElementById('mtrRunsList').innerHTML='<div class="hist-empty"><div class="ei">&#x274C;</div>Could not load MTR data.</div>';}}
+async function mtrSave(){
+const raw=document.getElementById('mtr_input').value.trim();
+if(!raw){showToast('Paste MTR output first');return;}
+const parsed=parseMTR(raw);
+if(!parsed.hops.length){showToast('Could not parse MTR output');return;}
+const manualTarget=document.getElementById('mtr_target').value.trim();
+const target=manualTarget||parsed.detectedTarget||'unknown';
+try{
+await fetch('/api/mtr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:document.getElementById('mtr_provider').value,note:document.getElementById('mtr_note').value.trim(),target,raw,parsed})});
+document.getElementById('mtr_input').value='';document.getElementById('mtr_note').value='';document.getElementById('mtr_target').value='';
+showToast('MTR run saved!');loadMTR();
+}catch(e){showToast('Could not save');}}
+async function mtrDelete(id){
+if(!confirm('Delete this run?'))return;
+await fetch('/api/mtr/'+id,{method:'DELETE'});showToast('Deleted');loadMTR();}
+function mtrExport(){
+const a=document.createElement('a');
+a.href=URL.createObjectURL(new Blob([JSON.stringify(window._mtrRuns,null,2)],{type:'application/json'}));
+a.download='mtr_results_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+function mtrRenderStats(runs){
+const sc=runs.filter(r=>r.provider==='Swisscom');const mf=runs.filter(r=>r.provider==='Mobile Factory');
+const avgLat=arr=>{if(!arr.length)return '&mdash;';const v=arr.map(r=>r.parsed.hops.at(-1)?.avg||0);return(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)+' ms';};
+const avgLoss=arr=>{if(!arr.length)return '&mdash;';const v=arr.map(r=>Math.max(...r.parsed.hops.map(h=>h.loss)));return(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)+'%';};
+document.getElementById('mtrStats').innerHTML='<div class="mtr-stat"><div class="sv">'+runs.length+'</div><div class="sl">Total Runs</div></div>'+'<div class="mtr-stat"><div class="sv" style="color:#5bc0eb">'+sc.length+'</div><div class="sl">Swisscom Runs</div></div>'+'<div class="mtr-stat"><div class="sv" style="color:#c084fc">'+mf.length+'</div><div class="sl">MF Runs</div></div>'+'<div class="mtr-stat"><div class="sv">'+avgLat(sc)+'</div><div class="sl">Avg SC End Latency</div></div>'+'<div class="mtr-stat"><div class="sv">'+avgLat(mf)+'</div><div class="sl">Avg MF End Latency</div></div>'+'<div class="mtr-stat"><div class="sv">'+avgLoss(runs)+'</div><div class="sl">Avg Max Loss</div></div>';}
+function mtrRenderCompare(runs){
+const banner=document.getElementById('mtrCompareBanner');
+const sc=runs.find(r=>r.provider==='Swisscom');const mf=runs.find(r=>r.provider==='Mobile Factory');
+if(!sc||!mf){banner.style.display='none';return;}banner.style.display='block';
+const scE=sc.parsed.hops.at(-1),mfE=mf.parsed.hops.at(-1);
+const scL=Math.max(...sc.parsed.hops.map(h=>h.loss));const mfL=Math.max(...mf.parsed.hops.map(h=>h.loss));
+document.getElementById('mtrCompareContent').innerHTML='<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Hops</div><span style="color:#5bc0eb;font-weight:700">'+sc.parsed.hops.length+'</span> vs <span style="color:#c084fc;font-weight:700">'+mf.parsed.hops.length+'</span></div>'+'<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Final Avg Latency</div><span style="color:#5bc0eb;font-weight:700">'+(scE?scE.avg:'?')+' ms</span> vs <span style="color:#c084fc;font-weight:700">'+(mfE?mfE.avg:'?')+' ms</span></div>'+'<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Max Packet Loss</div><span style="color:#5bc0eb;font-weight:700">'+scL+'%</span> vs <span style="color:#c084fc;font-weight:700">'+mfL+'%</span></div>'+'<div><div style="font-size:.7rem;color:var(--muted);margin-bottom:3px">Timestamps</div><span style="color:#5bc0eb;font-size:.75rem">'+(sc.parsed.startTime||sc.savedAt.slice(0,16).replace('T',' '))+'</span><br><span style="color:#c084fc;font-size:.75rem">'+(mf.parsed.startTime||mf.savedAt.slice(0,16).replace('T',' '))+'</span></div>';}
+function mtrRenderRuns(){
+const filter=document.getElementById('mtrFilter').value;
+const runs=window._mtrRuns.filter(r=>!filter||r.provider===filter);
+const el=document.getElementById('mtrRunsList');
+if(!runs.length){el.innerHTML='<div class="hist-empty"><div class="ei">&#x1F4ED;</div>No MTR runs saved yet.<br><br>Paste an <strong>mtr --report</strong> output above and click Save.</div>';return;}
+el.innerHTML=runs.map(r=>{
+const ts=r.parsed.startTime||r.savedAt.slice(0,16).replace('T',' ');
+const target=r.target||r.parsed.detectedTarget||'';
+const rows=r.parsed.hops.map(h=>'<tr><td>'+h.hop+'</td><td style="font-family:monospace;font-size:.75rem">'+h.host+'</td><td class="'+mtrLossClass(h.loss)+'">'+h.loss+'%</td><td class="'+mtrLatClass(h.avg)+'">'+h.avg+'</td><td>'+h.best+'</td><td>'+h.wrst+'</td><td>'+h.stdev+'</td></tr>').join('');
+return '<div class="mtr-run"><div class="mtr-run-hdr"><span class="mtr-badge '+mtrBadge(r.provider)+'">'+r.provider+'</span>'+(target?'<span class="mtr-target">&#x27A1; '+target+'</span>':'')+'<span style="color:var(--muted);font-size:.78rem">&#x1F550; '+ts+'</span>'+(r.note?'<span style="font-size:.8rem;color:var(--muted);font-style:italic">"'+r.note+'"</span>':'')+'<button class="mtr-del" onclick="mtrDelete('+r.id+')">&#x2715; Delete</button></div><table class="mtr-table"><thead><tr><th>Hop</th><th>Host</th><th>Loss%</th><th>Avg ms</th><th>Best</th><th>Wrst</th><th>StDev</th></tr></thead><tbody>'+rows+'</tbody></table></div>';}).join('');}
+</script>
 </html>
+
 

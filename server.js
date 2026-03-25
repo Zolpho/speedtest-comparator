@@ -30,6 +30,23 @@ app.delete('/api/results/:id', (req, res) => {
   writeDB(readDB().filter(r => String(r.id) !== req.params.id));
   res.json({ success: true });
 });
+const MTR_FILE = path.join(__dirname, 'data', 'mtr_results.json');
+if (!fs.existsSync(MTR_FILE)) fs.writeFileSync(MTR_FILE, '[]');
+const readMTR  = () => JSON.parse(fs.readFileSync(MTR_FILE, 'utf8'));
+const writeMTR = data => fs.writeFileSync(MTR_FILE, JSON.stringify(data, null, 2));
+
+app.get('/api/mtr', (_, res) => res.json(readMTR()));
+app.post('/api/mtr', (req, res) => {
+  const db = readMTR();
+  db.unshift({ id: Date.now(), savedAt: new Date().toISOString(), ...req.body });
+  writeMTR(db);
+  res.json({ success: true });
+});
+app.delete('/api/mtr/:id', (req, res) => {
+  writeMTR(readMTR().filter(r => String(r.id) !== req.params.id));
+  res.json({ success: true });
+});
+
 
 function checkAuth(req, res) {
   const pw = process.env.APP_PASSWORD;
@@ -131,4 +148,3 @@ app.post('/api/parse', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('SpeedTest running on port ' + PORT));
-
