@@ -47,6 +47,39 @@ app.delete('/api/mtr/:id', (req, res) => {
   res.json({ success: true });
 });
 
+const IPERF_FILE = path.join(__dirname, 'data', 'iperf_results.json');
+if (!fs.existsSync(IPERF_FILE)) fs.writeFileSync(IPERF_FILE, '[]');
+const readIperf  = () => JSON.parse(fs.readFileSync(IPERF_FILE, 'utf8'));
+const writeIperf = data => fs.writeFileSync(IPERF_FILE, JSON.stringify(data, null, 2));
+
+app.get('/api/iperf', (_, res) => res.json(readIperf()));
+app.post('/api/iperf', (req, res) => {
+  const db = readIperf();
+  db.unshift({ id: Date.now(), savedAt: new Date().toISOString(), ...req.body });
+  writeIperf(db);
+  res.json({ success: true });
+});
+app.delete('/api/iperf/:id', (req, res) => {
+  writeIperf(readIperf().filter(r => String(r.id) !== req.params.id));
+  res.json({ success: true });
+});
+
+const IPERFMAN_FILE = path.join(__dirname, 'data', 'iperfman.json');
+if (!fs.existsSync(IPERFMAN_FILE)) fs.writeFileSync(IPERFMAN_FILE, '[]');
+const readIperfman  = () => JSON.parse(fs.readFileSync(IPERFMAN_FILE, 'utf8'));
+const writeIperfman = data => fs.writeFileSync(IPERFMAN_FILE, JSON.stringify(data, null, 2));
+
+app.get('/api/iperfman', (_, res) => res.json(readIperfman()));
+app.post('/api/iperfman', (req, res) => {
+  const db = readIperfman();
+  db.unshift({ id: Date.now(), savedAt: new Date().toISOString(), ...req.body });
+  writeIperfman(db);
+  res.json({ success: true });
+});
+app.delete('/api/iperfman/:id', (req, res) => {
+  writeIperfman(readIperfman().filter(r => String(r.id) !== req.params.id));
+  res.json({ success: true });
+});
 
 function checkAuth(req, res) {
   const pw = process.env.APP_PASSWORD;
@@ -148,3 +181,4 @@ app.post('/api/parse', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('SpeedTest running on port ' + PORT));
+

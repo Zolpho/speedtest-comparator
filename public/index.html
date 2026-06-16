@@ -339,6 +339,8 @@ function initMap(d) {
     <div class="nav-tab active" onclick="showPage('new')">New Comparison</div>
     <div class="nav-tab" onclick="showPage('history')">📊 History</div>
     <div class="nav-tab" onclick="showPage('mtr')">🌐 MTR Results</div>
+    <div class="nav-tab" onclick="showPage('iperf')">⚡ iperf3</div>
+    <div class="nav-tab" onclick="showPage('iperfman')">📡 iPerfman</div>
   </div>
   <a class="docs-link" href="https://wiki.nexphone.ch/display/NETVOIP/Speedtest+comparison" target="_blank" rel="noopener">📖 Docs</a>
 </div>
@@ -527,6 +529,8 @@ function showPage(p) {
   event.currentTarget.classList.add('active');
   if (p === 'history') loadHistory();
   if (p === 'mtr') loadMTR();
+  if (p === 'iperf') loadIperf();
+  if (p === 'iperfman') loadIperfman();
 }
 
 /* ── Wizard ── */
@@ -975,6 +979,151 @@ async function runAutoFill(n, pw) {
 </select></div>
 <div id="mtrRunsList"></div>
 </div></div>
+<!-- ══ IPERF3 PAGE ══ -->
+<div class="page" id="page-iperf"><div style="max-width:1100px;margin:0 auto;padding:24px 16px">
+
+<div class="mtr-form-card"><div class="fc-hdr">Add iperf3 Run</div>
+<div class="frow" style="margin-top:10px">
+  <div class="field"><label>SIM / Provider</label>
+    <select id="iperf_provider" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+      <option value="Swisscom">Swisscom</option>
+      <option value="Mobile Factory">Mobile Factory (MF)</option>
+      <option value="MUCHO">MUCHO</option>
+      <option value="NX">NX</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+  <div class="field"><label>Direction</label>
+    <select id="iperf_direction" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+      <option value="download">↓ Download (reverse)</option>
+      <option value="upload">↑ Upload</option>
+      <option value="bidir">↕ Bidirectional</option>
+    </select>
+  </div>
+  <div class="field"><label>Interface (optional)</label>
+    <input type="text" id="iperf_iface" placeholder="e.g. en0, en3..."
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+  </div>
+</div>
+<div class="field" style="margin-top:10px"><label>Note (optional)</label>
+  <input type="text" id="iperf_note" placeholder="e.g. peak hours, location, 5G..." style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+</div>
+<div class="field" style="margin-top:10px"><label>Paste iperf3 -J JSON output</label>
+  <textarea id="iperf_input" placeholder='Paste output of: iperf3 -c 185.185.33.209 -R -t 30 -O 5 -J' style="width:100%;height:120px;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:.78rem;font-family:monospace;resize:vertical"></textarea>
+</div>
+<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+  <button class="btn btn-primary" onclick="iperfSave()">💾 Save Run</button>
+  <button class="btn btn-secondary" onclick="iperfExport()">📤 Export JSON</button>
+</div>
+</div>
+
+<!-- Help card -->
+<div class="mtr-help-card">
+  <h3>📋 How to run from your phone (Termux / Mac)</h3>
+  <div class="mtr-cmd-block">
+    <div class="mtr-cmd-label">↓ Download test (recommended)</div>
+    <div class="mtr-cmd">iperf3 -c 185.185.33.209 -p 443 -R -t 30 -O 5 -J --bind-dev en0</div>
+    <div class="mtr-cmd-note">-R = reverse (server sends) · -O 5 = skip warmup · -J = JSON output</div>
+    <div class="mtr-cmd-note">Replace en0 with active interface · find it with: ifconfig | grep -E "^en|inet " | grep -B1 "172\.20\."</div>
+  </div>
+  <div class="mtr-cmd-block">
+    <div class="mtr-cmd-label">↑ Upload test</div>
+    <div class="mtr-cmd">iperf3 -c 185.185.33.209 -p 443 -t 30 -O 5 -J --bind-dev en0</div>
+  </div>
+  <div class="mtr-cmd-block">
+    <div class="mtr-cmd-label">↕ Bidirectional</div>
+    <div class="mtr-cmd">iperf3 -c 185.185.33.209 -p 443 --bidir -t 30 -O 5 -J --bind-dev en0</div>
+    <div class="mtr-cmd-note">It's a niche test for network engineers checking for half-duplex issues, not a speed test metric end users care about.</div>
+  </div>
+  <div class="mtr-cmd-block">
+    <div class="mtr-cmd-label">📱 iOS — iPerf3 app (paste JSON from share sheet)</div>
+    <div class="mtr-cmd">Server: 185.185.33.209 · Port: 443 · Enable JSON output</div>
+  </div>
+</div>
+
+<!-- Summary grid -->
+<div id="iperfSummary"></div>
+
+<!-- Filter -->
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+  <span style="font-size:.82rem;color:var(--muted)">Filter:</span>
+  <select id="iperfFilter" onchange="iperfRenderRuns()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:.82rem">
+    <option value="">All Providers</option>
+    <option value="Swisscom">Swisscom</option>
+    <option value="Mobile Factory">Mobile Factory (MF)</option>
+    <option value="MUCHO">MUCHO</option>
+    <option value="NX">NX</option>
+  </select>
+</div>
+
+<div id="iperfRunsList"></div>
+</div></div>
+
+
+<!-- ══ IPERFMAN PAGE ══ -->
+<div class="page" id="page-iperfman"><div style="max-width:1100px;margin:0 auto;padding:24px 16px">
+
+<div class="mtr-form-card"><div class="fc-hdr">Add iPerfman Run</div>
+<div class="frow" style="margin-top:10px">
+  <div class="field"><label>SIM / Provider</label>
+    <select id="iperfman_provider" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+      <option value="Swisscom">Swisscom</option>
+      <option value="Mobile Factory">Mobile Factory (MF)</option>
+      <option value="MUCHO">MUCHO</option>
+      <option value="NX">NX</option>
+      <option value="Other">Other</option>
+    </select>
+  </div>
+  <div class="field"><label>Interface (optional)</label>
+    <input type="text" id="iperfman_iface" placeholder="e.g. en0, en3..."
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+  </div>
+</div>
+<div class="field" style="margin-top:10px"><label>Note (optional)</label>
+  <input type="text" id="iperfman_note" placeholder="e.g. peak hours, location, 5G..." style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.88rem;width:100%">
+</div>
+<div class="field" style="margin-top:10px"><label>Paste iPerfman log output</label>
+  <textarea id="iperfman_input" placeholder="Paste the full iPerfman log here (plain-text iperf3 output, not JSON)" style="width:100%;height:140px;padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:.78rem;font-family:monospace;resize:vertical"></textarea>
+</div>
+<div id="iperfman_preview" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:.82rem;color:var(--muted)"></div>
+<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+  <button class="btn btn-secondary" onclick="iperfmanPreview()">🔍 Preview Parse</button>
+  <button class="btn btn-primary" onclick="iperfmanSave()">💾 Save Run</button>
+  <button class="btn btn-secondary" onclick="iperfmanExport()">📤 Export JSON</button>
+</div>
+</div>
+
+<!-- Help card -->
+<div class="mtr-help-card">
+  <h3>📱 iPerfman App Settings</h3>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:12px">
+    <img src="iperfman2.jpg" alt="iPerfman main screen — server address, port, role and transmit mode settings" loading="lazy"
+      style="max-width:280px;width:100%;border-radius:12px;box-shadow:var(--shadow-md)">
+    <img src="iperfman1.jpg" alt="iPerfman additional parameters — streams, duration, omit, reporting interval, verbose logfile" loading="lazy"
+      style="max-width:280px;width:100%;border-radius:12px;box-shadow:var(--shadow-md)">
+  </div>
+  <div style="margin-top:12px;font-size:.8rem;color:var(--muted);text-align:center">
+    After the test, tap <strong style="color:var(--text)">Share</strong> → copy the plain-text log → paste it in the field above.
+  </div>
+</div>
+
+<!-- Summary grid -->
+<div id="iperfmanSummary"></div>
+
+<!-- Filter -->
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+  <span style="font-size:.82rem;color:var(--muted)">Filter:</span>
+  <select id="iperfmanFilter" onchange="iperfmanRenderRuns()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:.82rem">
+    <option value="">All Providers</option>
+    <option value="Swisscom">Swisscom</option>
+    <option value="Mobile Factory">Mobile Factory (MF)</option>
+    <option value="MUCHO">MUCHO</option>
+    <option value="NX">NX</option>
+  </select>
+</div>
+
+<div id="iperfmanRunsList"></div>
+</div></div>
 </body>
 <script>
 window._mtrRuns=[];
@@ -1111,6 +1260,437 @@ function mtrRenderRuns(){
       '</div><table class="mtr-table"><thead><tr><th>Hop</th><th>Host</th><th>Loss%</th><th>Avg ms</th><th>Best</th><th>Wrst</th><th>StDev</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }).join('');
 }
+/* ══ IPERF3 ══ */
+window._iperfRuns = [];
+
+async function loadIperf() {
+  const res = await fetch('/api/iperf');
+  window._iperfRuns = await res.json();
+  iperfRenderSummary();
+  iperfRenderRuns();
+}
+
+function iperfBadge(p) {
+  if (p==='Swisscom') return 'mtr-badge-sc';
+  if (p==='Mobile Factory') return 'mtr-badge-mf';
+  if (p==='MUCHO') return 'mtr-badge-mu';
+  if (p==='NX') return 'mtr-badge-nx';
+  return 'mtr-badge-ot';
+}
+
+function iperfSpeedColor(mbps) {
+  if (mbps >= 100) return 'var(--green)';
+  if (mbps >= 20)  return '#ffc940';
+  return 'var(--red)';
+}
+
+async function iperfSave() {
+  const raw = document.getElementById('iperf_input').value.trim();
+  const provider  = document.getElementById('iperf_provider').value;
+  const direction = document.getElementById('iperf_direction').value;
+  const note      = document.getElementById('iperf_note').value.trim();
+
+  let mbps = null, mbpsDown = null, mbpsUp = null, retransmits = null, duration = null;
+
+  if (raw) {
+    try {
+      const j = JSON.parse(raw);
+      const end = j.end || {};
+      if (direction === 'download') {
+        mbps        = ((end.sum_received?.bits_per_second || 0) / 1e6).toFixed(1);
+        retransmits = end.sum_sent?.retransmits ?? null;
+      } else if (direction === 'bidir') {
+        mbpsDown    = ((end.sum_received_bidir_reverse?.bits_per_second || 0) / 1e6).toFixed(1);
+        mbpsUp      = ((end.sum_sent?.bits_per_second || 0) / 1e6).toFixed(1);
+        mbps        = mbpsDown;
+        retransmits = end.sum_sent?.retransmits ?? null;
+
+      } else {
+        mbps        = ((end.sum_sent?.bits_per_second || 0) / 1e6).toFixed(1);
+        retransmits = end.sum_sent?.retransmits ?? null;
+      }
+      duration = end.sum_received?.seconds || end.sum_sent?.seconds || null;
+    } catch(e) {
+      showToast('⚠️ Invalid JSON — check output'); return;
+    }
+  }
+
+  if (!mbps) { showToast('⚠️ Could not parse speed from JSON'); return; }
+
+  const iface = document.getElementById('iperf_iface').value.trim();
+  await fetch('/api/iperf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider, direction, note, iface, mbps: parseFloat(mbps), mbpsDown: mbpsDown ? parseFloat(mbpsDown) : null, mbpsUp: mbpsUp ? parseFloat(mbpsUp) : null, retransmits, duration })
+  });
+
+  document.getElementById('iperf_input').value = '';
+  document.getElementById('iperf_note').value  = '';
+  showToast('✅ iperf3 run saved!');
+  loadIperf();
+}
+
+async function iperfDelete(id) {
+  await fetch('/api/iperf/' + id, { method: 'DELETE' });
+  loadIperf();
+}
+
+function iperfExport() {
+  const blob = new Blob([JSON.stringify(window._iperfRuns, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'iperf3_results.json'; a.click();
+}
+
+function iperfRenderSummary() {
+  const runs = window._iperfRuns;
+  const el   = document.getElementById('iperfSummary');
+  if (!runs.length) { el.innerHTML = ''; return; }
+
+  const providers = ['Swisscom','Mobile Factory','MUCHO','NX','Other'];
+  const colors    = { 'Swisscom':'#5bc0eb','Mobile Factory':'#c084fc','MUCHO':'#ffa032','NX':'#38bdf8','Other':'var(--green)' };
+
+  let html = '<div class="mtr-summary-grid">';
+  for (const p of providers) {
+    const pr = runs.filter(r => r.provider === p);
+    if (!pr.length) continue;
+    const dl   = pr.filter(r => r.direction === 'download').map(r => r.mbps);
+    const ul   = pr.filter(r => r.direction === 'upload').map(r => r.mbps);
+    const avg  = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '—';
+    const color = colors[p] || 'var(--accent)';
+    html +=
+      '<div class="mtr-prov-card" style="border-color:'+color+'33">'+
+      '<div class="mtr-prov-name" style="color:'+color+'">'+p+
+        ' <span style="color:var(--muted);font-weight:400">('+pr.length+' run'+(pr.length>1?'s':'')+')</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">↓ Avg Download</span>'+
+        '<span class="val" style="color:'+iperfSpeedColor(parseFloat(avg(dl)))+'">'+avg(dl)+' Mbps</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">↑ Avg Upload</span>'+
+        '<span class="val" style="color:'+iperfSpeedColor(parseFloat(avg(ul)))+'">'+avg(ul)+' Mbps</span></div>'+
+      '<div class="mtr-prov-row"><span class="lbl">Best Download</span>'+
+        '<span class="val">'+( dl.length ? Math.max(...dl).toFixed(1) : '—' )+' Mbps</span></div>'+
+      '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function iperfRenderRuns() {
+  const filter = document.getElementById('iperfFilter').value;
+  const runs   = window._iperfRuns.filter(r => !filter || r.provider === filter);
+  const el     = document.getElementById('iperfRunsList');
+  if (!runs.length) {
+    el.innerHTML = '<div class="hist-empty"><div class="ei">📭</div>No iperf3 runs yet.<br><br>Run a test, paste the <strong>-J</strong> output above and click Save.</div>';
+    return;
+  }
+  const dirIcon = { download:'↓', upload:'↑', bidir:'↕' };
+  el.innerHTML = runs.map(r => {
+    const ts = r.savedAt.slice(0,16).replace('T',' ');
+    const speedHtml = r.direction === 'bidir' && r.mbpsDown != null && r.mbpsUp != null
+      ? '<span style="font-size:1.1rem;font-weight:700;color:'+iperfSpeedColor(r.mbpsDown)+'">↓'+r.mbpsDown+' Mbps</span>'+
+        '<span style="font-size:1.1rem;font-weight:700;color:'+iperfSpeedColor(r.mbpsUp)+'">↑'+r.mbpsUp+' Mbps</span>'
+      : '<span style="font-size:1.1rem;font-weight:700;color:'+iperfSpeedColor(r.mbps)+'">'+r.mbps+' Mbps</span>';
+    return '<div class="mtr-run">'+
+      '<div class="mtr-run-hdr">'+
+        '<span class="mtr-badge '+iperfBadge(r.provider)+'">'+r.provider+'</span>'+
+        '<span class="mtr-target">'+(dirIcon[r.direction]||'')+' '+r.direction+'</span>'+
+        speedHtml+
+        (r.iface ? '<span class="mtr-target">🔌 '+r.iface+'</span>' : '')+
+        (r.retransmits!=null?'<span style="font-size:.75rem;color:var(--muted)">'+r.retransmits+' retr</span>':'')+
+        (r.duration?'<span style="font-size:.75rem;color:var(--muted)">'+parseFloat(r.duration).toFixed(0)+'s</span>':'')+
+        '<span style="color:var(--muted);font-size:.78rem">🕐 '+ts+'</span>'+
+        (r.note?'<span style="font-size:.8rem;color:var(--muted);font-style:italic">"'+r.note+'"</span>':'')+
+        '<button class="mtr-del" onclick="iperfDelete('+r.id+')">✕ Delete</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   iPerfman – plain-text iperf3 log parser
+   ═══════════════════════════════════════════ */
+
+window._iperfmanRuns = [];
+
+function iperfmanProvColor(p) {
+  if (p === 'Swisscom') return '#5bc0eb';
+  if (p === 'Mobile Factory') return '#c084fc';
+  if (p === 'MUCHO') return '#ffa032';
+  if (p === 'NX') return '#38bdf8';
+  return 'var(--green)';
+}
+
+/* Parse plain-text iPerfman / iperf3 log */
+function parseIperfmanLog(raw) {
+  // Normalize line endings (CRLF → LF, standalone CR → LF)
+  raw = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = raw.split('\n');
+  const result = {
+    version: null, os: null, timestamp: null,
+    host: null, port: null, mode: 'download',
+    streams: null, duration: null, omit: null,
+    localIP: null,
+    intervals: [],       // [{t, bitrateMbps}] – SUM lines only, non-omitted
+    summary: {
+      senderBitrateMbps: null, senderTransferGB: null, retransmits: null,
+      receiverBitrateMbps: null, receiverTransferGB: null
+    }
+  };
+
+  // Header parsing
+  for (const line of lines) {
+    // Version: "iperf 3.20" or "iperf3 3.20" or "iperf3  3.20"
+    const ver = line.match(/^iperf3?\s+([\d.]+)/i);
+    if (ver) { result.version = ver[1]; continue; }
+
+    // OS line (Darwin / Linux)
+    const osLine = line.match(/^(Darwin|Linux)\s+/);
+    if (osLine && !result.os) { result.os = line.trim(); continue; }
+
+    // Timestamp: "Time: Tue, 16 Jun 2026 11:12:42 UTC"
+    const ts = line.match(/^Time:\s+(.+)/i) || line.match(/^Date:\s+(.+)/i) || line.match(/^\[?\s*time\s*\]?\s*[=:]\s*(.+)/i);
+    if (ts && !result.timestamp) { result.timestamp = ts[1].trim(); continue; }
+
+    // Host: "Connecting to host X, port Y"
+    const host = line.match(/Connecting to host\s+(\S+),\s+port\s+(\d+)/);
+    if (host) { result.host = host[1]; result.port = host[2]; continue; }
+
+    // Reverse mode
+    if (/Reverse mode/.test(line)) { result.mode = 'download'; continue; }
+    if (/\[SUM\].*sender/.test(line) && !result.mode) { result.mode = 'upload'; }
+
+    // Local IP from connection lines
+    const localIP = line.match(/local\s+([\d.]+)\s+port/);
+    if (localIP && !result.localIP) { result.localIP = localIP[1]; continue; }
+
+    // Test config: "Starting Test: protocol: TCP, 10 streams, 131072 byte blocks, omitting 5 seconds, 30 second test"
+    const cfgStreams = line.match(/(\d+)\s+streams/);
+    const cfgOmit   = line.match(/omitting\s+(\d+)\s+seconds?/);
+    const cfgDur    = line.match(/(\d+)\s+second\s+test/);
+    if (cfgDur && !result.duration) {
+      if (cfgStreams) result.streams = parseInt(cfgStreams[1]);
+      if (cfgOmit)   result.omit    = parseInt(cfgOmit[1]);
+      result.duration = parseInt(cfgDur[1]);
+      continue;
+    }
+
+    // SUM interval lines (non-omitted only – no "(omitted)" suffix)
+    // "[SUM]   0.00-1.00   sec  28.5 MBytes   238 Mbits/sec"
+    if (/\[SUM\]/.test(line) && !/omitted/i.test(line) && !/sender|receiver/.test(line)) {
+      const m = line.match(/\[SUM\]\s+([\d.]+)-([\d.]+)\s+sec\s+([\d.]+)\s+(K|M|G)Bytes\s+([\d.]+)\s+(K|M|G)bits\/sec/);
+      if (m) {
+        const tEnd = parseFloat(m[2]);
+        let bps = parseFloat(m[5]);
+        const unit = m[6];
+        if (unit === 'K') bps /= 1000;
+        if (unit === 'G') bps *= 1000;
+        result.intervals.push({ t: Math.round(tEnd), bitrateMbps: parseFloat(bps.toFixed(2)) });
+      }
+      continue;
+    }
+
+    // Summary: "[SUM]   0.00-30.02  sec  1.35 GBytes   386 Mbits/sec  934             sender"
+    const sumSnd = line.match(/\[SUM\].*?sec\s+([\d.]+)\s+(K|M|G)Bytes\s+([\d.]+)\s+(K|M|G)bits\/sec\s+(\d+)\s+sender/);
+    if (sumSnd) {
+      let bps = parseFloat(sumSnd[3]);
+      const ub = sumSnd[4]; if (ub === 'K') bps /= 1000; if (ub === 'G') bps *= 1000;
+      let tx = parseFloat(sumSnd[1]);
+      const ut = sumSnd[2]; if (ut === 'K') tx /= (1024*1024); else if (ut === 'M') tx /= 1024; // → GB
+      result.summary.senderBitrateMbps = parseFloat(bps.toFixed(2));
+      result.summary.senderTransferGB = parseFloat(tx.toFixed(3));
+      result.summary.retransmits = parseInt(sumSnd[5]);
+      continue;
+    }
+
+    // Receiver summary line
+    const sumRcv = line.match(/\[SUM\].*?sec\s+([\d.]+)\s+(K|M|G)Bytes\s+([\d.]+)\s+(K|M|G)bits\/sec\s+receiver/);
+    if (sumRcv) {
+      let bps = parseFloat(sumRcv[3]);
+      const ub = sumRcv[4]; if (ub === 'K') bps /= 1000; if (ub === 'G') bps *= 1000;
+      let tx = parseFloat(sumRcv[1]);
+      const ut = sumRcv[2]; if (ut === 'K') tx /= (1024*1024); else if (ut === 'M') tx /= 1024;
+      result.summary.receiverBitrateMbps = parseFloat(bps.toFixed(2));
+      result.summary.receiverTransferGB = parseFloat(tx.toFixed(3));
+      continue;
+    }
+  }
+
+  // Derive mode from reverse flag if not already set
+  if (raw.includes('Reverse mode')) result.mode = 'download';
+  else if (!result.mode) result.mode = 'upload';
+
+  // Peak / avg from intervals
+  if (result.intervals.length) {
+    const vals = result.intervals.map(i => i.bitrateMbps);
+    result.peakMbps = Math.max(...vals);
+    result.avgMbps = parseFloat((vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2));
+  }
+
+  return result;
+}
+
+/* Inline sparkline SVG from intervals */
+function iperfmanSparkline(intervals) {
+  if (!intervals || intervals.length < 2) return '';
+  const vals = intervals.map(i => i.bitrateMbps);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const W = 120, H = 28, pad = 2;
+  const x = (i) => pad + (i / (vals.length - 1)) * (W - 2 * pad);
+  const y = (v) => H - pad - ((v - min) / (max - min || 1)) * (H - 2 * pad);
+  const pts = vals.map((v, i) => x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:inline-block;vertical-align:middle">
+    <polyline points="${pts}" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+async function loadIperfman() {
+  try {
+    window._iperfmanRuns = await fetch('/api/iperfman').then(r => r.json());
+    iperfmanRenderSummary(window._iperfmanRuns);
+    iperfmanRenderRuns();
+  } catch(e) {
+    document.getElementById('iperfmanRunsList').innerHTML = '<div class="hist-empty"><div class="ei">&#x274C;</div>Could not load iPerfman data.</div>';
+  }
+}
+
+function iperfmanPreview() {
+  const raw = document.getElementById('iperfman_input').value.trim();
+  const el = document.getElementById('iperfman_preview');
+  if (!raw) { el.style.display = 'none'; return; }
+  const p = parseIperfmanLog(raw);
+  const mode = p.mode === 'download' ? '↓ Download' : '↑ Upload';
+  const bw = p.summary.senderBitrateMbps || p.avgMbps || '?';
+  const retr = p.summary.retransmits != null ? p.summary.retransmits : '?';
+  const tx = p.summary.senderTransferGB != null ? p.summary.senderTransferGB + ' GB' : '?';
+  el.style.display = 'block';
+  el.innerHTML =
+    '<strong style="color:var(--text)">Parsed preview:</strong> ' +
+    mode + ' · <strong style="color:var(--green)">' + bw + ' Mbits/sec</strong>' +
+    ' · Transfer: ' + tx +
+    ' · Retransmits: ' + retr +
+    ' · Streams: ' + (p.streams || '?') +
+    ' · Duration: ' + (p.duration || '?') + 's' +
+    ' · Intervals captured: ' + p.intervals.length +
+    (p.timestamp ? ' · ' + p.timestamp : '');
+}
+
+async function iperfmanSave() {
+  const raw = document.getElementById('iperfman_input').value.trim();
+  if (!raw) { showToast('Paste iPerfman log first'); return; }
+  const parsed = parseIperfmanLog(raw);
+  if (!parsed.intervals.length && !parsed.summary.senderBitrateMbps) {
+    showToast('Could not parse log – check format'); return;
+  }
+  const payload = {
+    provider: document.getElementById('iperfman_provider').value,
+    iface: document.getElementById('iperfman_iface').value.trim(),
+    note: document.getElementById('iperfman_note').value.trim(),
+    raw,
+    parsed
+  };
+  try {
+    await fetch('/api/iperfman', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    document.getElementById('iperfman_input').value = '';
+    document.getElementById('iperfman_note').value = '';
+    document.getElementById('iperfman_iface').value = '';
+    document.getElementById('iperfman_preview').style.display = 'none';
+    showToast('iPerfman run saved!');
+    loadIperfman();
+  } catch(e) { showToast('Could not save'); }
+}
+
+async function iperfmanDelete(id) {
+  if (!confirm('Delete this run?')) return;
+  await fetch('/api/iperfman/' + id, { method: 'DELETE' });
+  showToast('Deleted');
+  loadIperfman();
+}
+
+function iperfmanExport() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(window._iperfmanRuns, null, 2)], { type: 'application/json' }));
+  a.download = 'iperfman_results_' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+}
+
+function iperfmanRenderSummary(runs) {
+  const el = document.getElementById('iperfmanSummary');
+  if (!runs.length) { el.innerHTML = ''; return; }
+
+  let html = '<div class="mtr-total-card"><div class="big">' + runs.length + '</div><div class="lbl">Total iPerfman runs</div></div>';
+  const providers = [...new Set(runs.map(r => r.provider))];
+  html += '<div class="mtr-summary-grid">';
+  for (const p of providers) {
+    const pr = runs.filter(r => r.provider === p);
+    const color = iperfmanProvColor(p);
+    const speeds = pr.map(r => r.parsed.summary.senderBitrateMbps || r.parsed.avgMbps || 0).filter(Boolean);
+    const avgSpeed = speeds.length ? (speeds.reduce((a,b)=>a+b,0)/speeds.length).toFixed(1) : '–';
+    const peakSpeed = speeds.length ? Math.max(...speeds).toFixed(1) : '–';
+    const avgRetr = (() => {
+      const v = pr.map(r => r.parsed.summary.retransmits).filter(x => x != null);
+      return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(0) : '–';
+    })();
+    const lastTs = pr[0].parsed.timestamp || pr[0].savedAt.slice(0,16).replace('T',' ');
+    html +=
+      '<div class="mtr-prov-card" style="border-color:' + color + '33">' +
+      '<div class="mtr-prov-name" style="color:' + color + '">' + p + ' <span style="color:var(--muted);font-weight:400">(' + pr.length + ' run' + (pr.length>1?'s':'') + ')</span></div>' +
+      '<div class="mtr-prov-row"><span class="lbl">Avg speed</span><span class="val">' + avgSpeed + ' Mbps</span></div>' +
+      '<div class="mtr-prov-row"><span class="lbl">Peak speed</span><span class="val">' + peakSpeed + ' Mbps</span></div>' +
+      '<div class="mtr-prov-row"><span class="lbl">Avg retransmits</span><span class="val">' + avgRetr + '</span></div>' +
+      '<div class="mtr-prov-row"><span class="lbl">Last run</span><span class="val" style="font-size:.72rem;color:var(--muted)">' + lastTs + '</span></div>' +
+      '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function iperfmanRenderRuns() {
+  const filter = document.getElementById('iperfmanFilter').value;
+  const runs = filter ? window._iperfmanRuns.filter(r => r.provider === filter) : window._iperfmanRuns;
+  const el = document.getElementById('iperfmanRunsList');
+  if (!runs.length) {
+    el.innerHTML = '<div class="hist-empty"><div class="ei">📡</div>No iPerfman runs yet. Paste a log above to get started.</div>';
+    return;
+  }
+  el.innerHTML = runs.map(r => {
+    const p = r.parsed || {};
+    const sum = p.summary || {};
+    const bw = sum.senderBitrateMbps || p.avgMbps;
+    const bwStr = bw ? '<strong style="color:var(--green)">' + bw + ' Mbits/sec</strong>' : '<span style="color:var(--muted)">–</span>';
+    const mode = (p.mode === 'download') ? '<span style="color:var(--green)">↓ DL</span>' : '<span style="color:#f59e0b">↑ UL</span>';
+    const retrStr = sum.retransmits != null ? sum.retransmits : '–';
+    const txStr = sum.senderTransferGB != null ? sum.senderTransferGB + ' GB' : (sum.senderTransferMB != null ? sum.senderTransferMB + ' MB' : '–');
+    const color = iperfmanProvColor(r.provider);
+    const ts = p.timestamp || r.savedAt.slice(0,16).replace('T',' ');
+    const spark = iperfmanSparkline(p.intervals);
+    const peakStr = p.peakMbps ? p.peakMbps.toFixed(1) + ' Mbps' : '–';
+    const avgStr = p.avgMbps ? p.avgMbps.toFixed(1) + ' Mbps' : '–';
+    return '<div class="mtr-run-card">' +
+      '<div class="mtr-run-hdr">' +
+        '<span class="mtr-badge ' + (r.provider==='Swisscom'?'mtr-badge-sc':r.provider==='Mobile Factory'?'mtr-badge-mf':r.provider==='MUCHO'?'mtr-badge-mu':r.provider==='NX'?'mtr-badge-nx':'mtr-badge-ot') + '">' + r.provider + '</span>' +
+        mode + ' · ' + bwStr +
+        ' <span style="font-size:.72rem;color:var(--muted)">· ' + ts + '</span>' +
+        (r.iface ? '<span style="font-size:.72rem;color:var(--muted)"> · ' + r.iface + '</span>' : '') +
+        '<button class="mtr-del" onclick="iperfmanDelete(' + r.id + ')">✕ Delete</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;align-items:center">' +
+        '<div style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted)">' +
+          '<span>Transfer: <strong style="color:var(--text)">' + txStr + '</strong></span>' +
+          '<span>Retransmits: <strong style="color:var(--text)">' + retrStr + '</strong></span>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted)">' +
+          '<span>Peak: <strong style="color:var(--text)">' + peakStr + '</strong></span>' +
+          '<span>Avg: <strong style="color:var(--text)">' + avgStr + '</strong></span>' +
+        '</div>' +
+        (p.streams ? '<div style="font-size:.78rem;color:var(--muted)">Streams: <strong style="color:var(--text)">' + p.streams + '</strong></div>' : '') +
+        (p.localIP ? '<div style="font-size:.78rem;color:var(--muted)">Local IP: <strong style="color:var(--text)">' + p.localIP + '</strong></div>' : '') +
+        (p.duration ? '<div style="font-size:.78rem;color:var(--muted)">Duration: <strong style="color:var(--text)">' + p.duration + 's</strong></div>' : '') +
+        '<div style="margin-left:auto">' + spark + '</div>' +
+      '</div>' +
+      (r.note ? '<div style="margin-top:6px;font-size:.78rem;color:var(--muted);font-style:italic">"' + r.note + '"</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
 </script>
 </html>
+
 
